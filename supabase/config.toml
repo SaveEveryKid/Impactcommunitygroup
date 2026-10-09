@@ -1,0 +1,6 @@
+# Minimal Supabase CLI config. The deploy workflow links this repo to the
+# project named by SUPABASE_PROJECT_REF and runs `supabase db push`.
+project_id = "kindred-commons"
+
+[db]
+major_version = 15

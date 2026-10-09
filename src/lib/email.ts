@@ -6,7 +6,7 @@ export type EmailResult = { ok: true; id: string } | { ok: false; error: string;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Minimal, accessible HTML email layout (single column, inline styles). */
-export function renderEmail({ heading, body, ctaLabel, ctaUrl, footer }: { heading: string; body: string; ctaLabel?: string; ctaUrl?: string; footer?: string }) {
+export function renderEmail({ heading, body, ctaLabel, ctaUrl, footer, unsubscribe }: { heading: string; body: string; ctaLabel?: string; ctaUrl?: string; footer?: string; unsubscribe?: string }) {
   const paragraphs = body
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#3b4a5f">${esc(p).replace(/\n/g, "<br>")}</p>`)
@@ -21,11 +21,11 @@ export function renderEmail({ heading, body, ctaLabel, ctaUrl, footer }: { headi
 <p style="margin:0 0 24px;font-weight:700;color:#13233a;font-size:15px">${esc(brandName)}</p>
 <h1 style="margin:0 0 16px;font-size:22px;color:#13233a">${esc(heading)}</h1>
 ${paragraphs}${cta}
-<p style="margin:32px 0 0;font-size:13px;color:#5d6a7c">${footer ? esc(footer) : `You received this because you have an account on ${esc(brandName)}. <a href="${siteUrl}/settings/notifications" style="color:#5d6a7c">Email preferences</a>.`}</p>
+<p style="margin:32px 0 0;font-size:13px;color:#5d6a7c">${footer ? esc(footer) : `You received this because you have an account on ${esc(brandName)}. <a href="${siteUrl}/settings/notifications" style="color:#5d6a7c">Email preferences</a>${unsubscribe ? ` or <a href="${esc(unsubscribe)}" style="color:#5d6a7c">unsubscribe</a>` : ""}.`}</p>
 </td></tr></table></td></tr></table></body></html>`;
 }
 
-export async function sendEmail({ to, subject, html, text, idempotencyKey }: { to: string; subject: string; html: string; text: string; idempotencyKey?: string }): Promise<EmailResult> {
+export async function sendEmail({ to, subject, html, text, idempotencyKey, headers }: { to: string; subject: string; html: string; text: string; idempotencyKey?: string; headers?: Record<string, string> }): Promise<EmailResult> {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!key || !from) return { ok: false, error: "Email provider not configured", skipped: true };
@@ -37,7 +37,7 @@ export async function sendEmail({ to, subject, html, text, idempotencyKey }: { t
         "Content-Type": "application/json",
         ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       },
-      body: JSON.stringify({ from, to: [to], subject, html, text }),
+      body: JSON.stringify({ from, to: [to], subject, html, text, ...(headers ? { headers } : {}) }),
     });
     const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
     if (!res.ok || !json.id) return { ok: false, error: json.message ?? `HTTP ${res.status}` };

@@ -16,8 +16,12 @@ export function getStripe(): Stripe | null {
     console.error("[stripe] Live key present but STRIPE_ALLOW_LIVE is not 'true'. Payments disabled.");
     return (client = null);
   }
-  client = new Stripe(key, { appInfo: { name: "kindred-commons" }, maxNetworkRetries: 2 });
+  // Fetch-based HTTP client works on Cloudflare Workers and in Node.
+  client = new Stripe(key, { appInfo: { name: "kindred-commons" }, maxNetworkRetries: 2, httpClient: Stripe.createFetchHttpClient() });
   return client;
 }
 
 export const isStripeConfigured = () => getStripe() !== null;
+
+/** Web Crypto provider for async webhook signature verification (Workers-compatible). */
+export const stripeCrypto = Stripe.createSubtleCryptoProvider();

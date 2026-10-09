@@ -44,3 +44,8 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /screenshots/
+/.open-next/
+/.wrangler/
+/.dev.vars
+/test-results/
+/playwright-report/

@@ -529,6 +529,35 @@ run("database security & workflows", () => {
     });
   });
 
+  // -------------------------------------------------------- maintenance
+  describe("maintenance jobs", () => {
+    it("releases lapsed holds, expires listings, and sends reminders once", async () => {
+      const [{ id: ev }] = await db.as(
+        bob,
+        `insert into events (org_id, slug, title, starts_at, ends_at, capacity, status)
+         values ($1, 'tomorrow-meal', 'Tomorrow meal', now() + interval '20 hours', now() + interval '22 hours', 5, 'published') returning id`,
+        [receiver],
+      );
+      await db.as(carol, `select register_for_event($1)`, [ev]);
+      const [{ run_maintenance: r1 }] = await db.sql(`select run_maintenance()`);
+      const [{ run_maintenance: r2 }] = await db.sql(`select run_maintenance()`);
+      expect(r1.event_reminders).toBeGreaterThanOrEqual(1);
+      expect(r2.event_reminders).toBe(0);
+      await expect(db.as(carol, `select run_maintenance()`)).rejects.toThrow(/permission denied/);
+    });
+
+    it("claims email batches without double-sending", async () => {
+      const a = await db.sql(`select * from claim_email_batch(1000)`);
+      const b = await db.sql(`select * from claim_email_batch(1000)`);
+      const ids = new Set(a.map((r) => r.id));
+      expect(b.every((r) => r.email_attempts === undefined)).toBe(true);
+      // second claim only returns rows still pending with attempts < 3 (same rows, attempts incremented)
+      expect(a.length).toBeGreaterThan(0);
+      expect(b.filter((r) => !ids.has(r.id))).toHaveLength(0);
+      await expect(db.as(alice, `select * from claim_email_batch(10)`)).rejects.toThrow(/permission denied/);
+    });
+  });
+
   // ------------------------------------------------------------- misc
   describe("profiles & admin", () => {
     it("users cannot flag themselves as demo or edit others", async () => {

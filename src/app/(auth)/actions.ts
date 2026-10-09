@@ -31,7 +31,7 @@ export async function signUp(_prev: ActionState, fd: FormData): Promise<ActionSt
     password: parsed.data.password,
     options: {
       emailRedirectTo: `${siteUrl}/auth/confirm?next=${encodeURIComponent(next)}`,
-      data: { display_name: parsed.data.display_name, is_adult: parsed.data.age_confirmation === "adult" },
+      data: { display_name: parsed.data.display_name, is_adult: parsed.data.age_confirmation === "adult", account_type: parsed.data.account_type },
     },
   });
   if (error) {

@@ -19,8 +19,13 @@ export async function GET(request: NextRequest) {
   if (!supabase) return NextResponse.redirect(`${origin}/login?error=not-configured`);
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(`${origin}${type === "recovery" ? "/reset-password" : next}`);
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    if (!error) {
+      if (type === "recovery") return NextResponse.redirect(`${origin}/reset-password`);
+      // New organization accounts continue straight to registering the organization.
+      const wantsOrg = data.user?.user_metadata?.account_type === "organization" && (type === "signup" || type === "email");
+      return NextResponse.redirect(`${origin}${wantsOrg && !searchParams.get("next") ? "/dashboard/organizations/new" : next}`);
+    }
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${next}`);

@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, stripeCrypto } from "@/lib/stripe";
 import { handleStripeEvent } from "@/lib/payments";
 
 export const runtime = "nodejs";
@@ -12,17 +12,22 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const stripe = getStripe();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) return new Response("Payments not configured", { status: 503 });
+  // Platform and Connect endpoints have separate signing secrets.
+  const secrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_CONNECT_WEBHOOK_SECRET].filter(Boolean) as string[];
+  if (!stripe || !secrets.length) return new Response("Payments not configured", { status: 503 });
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new Response("Missing signature", { status: 400 });
   const body = await req.text();
-  let event: Stripe.Event;
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, secret);
-  } catch {
-    return new Response("Invalid signature", { status: 400 });
+  let event: Stripe.Event | null = null;
+  for (const secret of secrets) {
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, sig, secret, undefined, stripeCrypto);
+      break;
+    } catch {
+      // try the next secret
+    }
   }
+  if (!event) return new Response("Invalid signature", { status: 400 });
   try {
     const result = await handleStripeEvent(event);
     return Response.json({ received: true, result });

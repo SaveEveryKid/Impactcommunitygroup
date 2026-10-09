@@ -38,6 +38,16 @@ describe("Stripe webhook route", () => {
     expect(handle).toHaveBeenCalledWith(expect.objectContaining({ id: "evt_1" }));
   });
 
+  it("accepts events signed with the Connect endpoint secret", async () => {
+    process.env.STRIPE_CONNECT_WEBHOOK_SECRET = "whsec_connect";
+    handle.mockResolvedValue("processed");
+    const { POST } = await import("./route");
+    const body = JSON.stringify({ id: "evt_c", object: "event", type: "account.updated", data: { object: {} } });
+    const header = Stripe.webhooks.generateTestHeaderString({ payload: body, secret: "whsec_connect" });
+    const res = await POST(new Request("http://localhost/api/stripe/webhook", { method: "POST", body, headers: { "stripe-signature": header } }));
+    expect(res.status).toBe(200);
+  });
+
   it("returns 500 so Stripe retries when processing fails", async () => {
     handle.mockRejectedValue(new Error("db down"));
     const { POST } = await import("./route");

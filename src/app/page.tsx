@@ -264,7 +264,7 @@ export default async function HomePage() {
         <Container className="grid gap-6 md:grid-cols-2">
           <div className="rounded-[var(--radius-lg)] bg-teal p-8 text-white sm:p-10">
             <h2 className="text-3xl font-semibold">Bring your organization</h2>
-            <p className="mt-3 max-w-md text-white/85">
+            <p className="mt-3 max-w-md text-white">
               Registration takes about ten minutes. A person on our team reviews every organization before it goes public.
             </p>
             <LinkButton href="/signup?type=organization" variant="inverse" size="lg" className="mt-6">
