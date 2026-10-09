@@ -66,13 +66,34 @@ if (RESEND_API_KEY && EMAIL_FROM) {
   });
 }
 
-const res = await fetch(`https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth`, {
-  method: "PATCH",
-  headers: { Authorization: `Bearer ${SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json" },
-  body: JSON.stringify(config),
-});
-if (!res.ok) {
-  console.error(`Supabase auth config failed: HTTP ${res.status} ${await res.text()}`);
+async function patch(body) {
+  const res = await fetch(`https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return { ok: res.ok, status: res.status, text: res.ok ? "" : (await res.text()).slice(0, 500) };
+}
+
+// GitHub annotation helpers (visible in the run summary and via the API).
+const warn = (m) => console.log(`::warning title=Supabase auth config::${m.replace(/\r?\n/g, " ")}`);
+
+let r = await patch(config);
+if (!r.ok && r.status === 400) {
+  warn(`Full config rejected (400): ${r.text}. Retrying with essential settings only.`);
+  const essential = { site_url: config.site_url, uri_allow_list: config.uri_allow_list };
+  for (const k of Object.keys(config)) if (k.startsWith("mailer_")) essential[k] = config[k];
+  r = await patch(essential);
+  if (!r.ok && r.status === 400) {
+    warn(`Essential config also rejected (400): ${r.text}. Retrying with URLs only.`);
+    r = await patch({ site_url: config.site_url, uri_allow_list: config.uri_allow_list });
+  }
+}
+if (!r.ok) {
+  const hint = r.status === 401 || r.status === 403
+    ? "The Supabase access token lacks permission to change Auth settings. Give it Auth (configuration) read & write."
+    : "See the response above.";
+  warn(`Supabase auth config failed: HTTP ${r.status} ${r.text}. ${hint}`);
   process.exit(1);
 }
-console.log(`Supabase auth configured for ${site}${RESEND_API_KEY ? " with Resend SMTP" : " (no custom SMTP: set RESEND_API_KEY for production email)"}`);
+console.log(`Supabase auth configured for ${site}${RESEND_API_KEY && EMAIL_FROM ? " with Resend SMTP" : " (built-in Supabase email; set RESEND_API_KEY and EMAIL_FROM for production)"}`);

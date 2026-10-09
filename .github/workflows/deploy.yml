@@ -106,6 +106,8 @@ jobs:
           echo "service=$service" >> "$GITHUB_OUTPUT"
 
       - name: Configure Supabase Auth (URLs, templates, SMTP)
+        # Non-fatal: the site still deploys; the warning explains what to fix.
+        continue-on-error: true
         run: node scripts/configure-supabase-auth.mjs
 
       - name: Build for Cloudflare
