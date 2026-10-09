@@ -1,5 +1,6 @@
 import { getSupabase, getCurrentUser } from "@/lib/supabase/server";
 import { csvResponse, toCsv } from "@/lib/csv";
+import { fetchAll } from "@/lib/fetch-all";
 
 export async function GET(req: Request, { params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
@@ -10,11 +11,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ orgId: s
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
   // RLS limits impact_records to members of this organization.
-  let q = supabase.from("impact_records").select("occurred_at, metric, quantity, unit, verification, method_note, source_type, resource_category").eq("org_id", orgId).order("occurred_at");
-  if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) q = q.gte("occurred_at", from);
-  if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) q = q.lt("occurred_at", to);
-  const { data, error } = await q;
-  if (error) return new Response("Could not load impact records", { status: 500 });
+  let data: { occurred_at: string; metric: string; quantity: number; unit: string; verification: string; method_note: string | null; source_type: string; resource_category: string | null }[];
+  try {
+    data = await fetchAll((a, b) => {
+      let q = supabase.from("impact_records").select("occurred_at, metric, quantity, unit, verification, method_note, source_type, resource_category").eq("org_id", orgId).order("occurred_at").order("id");
+      if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) q = q.gte("occurred_at", from);
+      if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) q = q.lt("occurred_at", to);
+      return q.range(a, b);
+    });
+  } catch {
+    return new Response("Could not load impact records", { status: 500 });
+  }
   const rows = (data ?? []).map((r) => [r.occurred_at.slice(0, 10), r.metric, Number(r.quantity), r.unit, r.verification, r.source_type, r.resource_category ?? "", r.method_note ?? ""]);
   return csvResponse(`impact-${orgId.slice(0, 8)}.csv`, toCsv(["Date", "Metric", "Quantity", "Unit", "Verification", "Source", "Category", "Method"], rows));
 }

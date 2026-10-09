@@ -85,3 +85,30 @@ begin
 end $$;
 revoke all on function public.claim_email_batch(int) from public, anon, authenticated;
 grant execute on function public.claim_email_batch(int) to service_role;
+
+-- Platform-wide impact totals for administrators (aggregated in the database,
+-- so totals stay correct regardless of API row limits). Demo data excluded.
+create or replace function public.platform_impact_summary(p_from timestamptz default null, p_to timestamptz default null)
+returns table (metric text, verification public.impact_verification, unit text, total numeric, records bigint, organizations bigint)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.is_platform_staff() then
+    raise exception 'Platform staff only' using errcode = '42501';
+  end if;
+  return query
+    select r.metric::text, r.verification, r.unit, sum(r.quantity), count(*), count(distinct r.org_id)
+    from public.impact_records r
+    where not r.is_demo and (p_from is null or r.occurred_at >= p_from) and (p_to is null or r.occurred_at < p_to)
+    group by r.metric, r.verification, r.unit
+    order by r.metric::text;
+end $$;
+
+create or replace function public.platform_payment_totals()
+returns table (kind text, livemode boolean, total_cents bigint, records bigint)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Platform administrator required' using errcode = '42501';
+  end if;
+  return query select p.kind, p.livemode, sum(p.amount_cents)::bigint, count(*) from public.payment_records p group by p.kind, p.livemode;
+end $$;

@@ -24,6 +24,8 @@ export async function signUp(_prev: ActionState, fd: FormData): Promise<ActionSt
   if (!parsed.success) return { ok: false, fieldErrors: fieldErrorsFrom(parsed.error), values: echoValues(fd) };
   const supabase = await getSupabase();
   if (!supabase) return NOT_CONFIGURED;
+  const { data: setting } = await supabase.from("platform_settings").select("value").eq("key", "registration.open").maybeSingle();
+  if (setting?.value === false) return { ok: false, message: "New registrations are paused right now. Please check back soon.", values: echoValues(fd) };
 
   const next = parsed.data.account_type === "organization" ? "/dashboard/organizations/new" : "/dashboard";
   const { error } = await supabase.auth.signUp({

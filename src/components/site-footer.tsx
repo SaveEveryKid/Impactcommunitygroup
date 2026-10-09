@@ -11,6 +11,7 @@ const groups = [
       ["/volunteer", "Volunteer opportunities"],
       ["/events", "Community events"],
       ["/resources", "Resource exchange"],
+      ["/feed", "Community feed"],
       ["/search", "Search everything"],
     ],
   },

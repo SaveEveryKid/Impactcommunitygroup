@@ -12,6 +12,7 @@ export const PUBLIC_NAV = [
   { href: "/volunteer", label: "Volunteer" },
   { href: "/events", label: "Events" },
   { href: "/resources", label: "Resource exchange" },
+  { href: "/feed", label: "Feed" },
   { href: "/impact", label: "Impact" },
 ];
 

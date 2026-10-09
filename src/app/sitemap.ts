@@ -4,7 +4,7 @@ import { appEnv, isSupabaseConfigured, siteUrl, supabaseAnonKey, supabaseUrl } f
 
 export const revalidate = 3600;
 
-const STATIC = ["", "/about", "/how-it-works", "/organizations", "/volunteer", "/events", "/resources", "/impact", "/partners", "/support", "/contact", "/faq", "/privacy", "/terms", "/guidelines", "/accessibility"];
+const STATIC = ["", "/about", "/how-it-works", "/organizations", "/volunteer", "/events", "/resources", "/feed", "/impact", "/partners", "/support", "/contact", "/faq", "/privacy", "/terms", "/guidelines", "/accessibility"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (appEnv === "demo") return [];
