@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Design tokens — Kindred Commons (working brand)
+   Structure: harbor navy. Action: deep teal. Ground: sage paper.
+   Marigold is reserved for verified-impact highlights only.
+   ========================================================================== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #eef0ea;
+  --paper-raised: #f8f9f5;
+  --surface: #ffffff;
+  --ink: #13233a;
+  --ink-soft: #3b4a5f;
+  --ink-muted: #5d6a7c;
+  --line: #d5dad0;
+  --line-strong: #b9c1b4;
+  --teal: #0b7a6a;
+  --teal-strong: #075e52;
+  --teal-wash: #dcefe9;
+  --marigold: #e0a12b;
+  --marigold-wash: #fbefd5;
+  --danger: #b4232f;
+  --danger-wash: #fbe5e6;
+  --warn: #8a5a00;
+  --warn-wash: #fdf1d6;
+  --focus: #0b7a6a;
+
+  /* Pillar hues — each passes 4.5:1 on white as text */
+  --pillar-mental: #4c5bb5;
+  --pillar-physical: #b0472b;
+  --pillar-social: #0b7a6a;
+  --pillar-spiritual: #7a4a9a;
+  --pillar-financial: #6b6418;
+
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-raised: 0 1px 0 rgb(19 35 58 / 0.04), 0 8px 24px -12px rgb(19 35 58 / 0.18);
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-teal: var(--teal);
+  --color-teal-strong: var(--teal-strong);
+  --color-teal-wash: var(--teal-wash);
+  --color-marigold: var(--marigold);
+  --color-marigold-wash: var(--marigold-wash);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-pillar-mental: var(--pillar-mental);
+  --color-pillar-physical: var(--pillar-physical);
+  --color-pillar-social: var(--pillar-social);
+  --color-pillar-spiritual: var(--pillar-spiritual);
+  --color-pillar-financial: var(--pillar-financial);
+
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-lg: var(--radius-lg);
+  --radius-md: var(--radius-md);
+  --radius-sm: var(--radius-sm);
+  --shadow-raised: var(--shadow-raised);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+p { text-wrap: pretty; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection { background: var(--teal-wash); color: var(--ink); }
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  background: var(--ink);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+}
+.skip-link:focus { top: 1rem; }
+
+/* Prose for policy pages */
+.prose-body { max-width: 68ch; }
+.prose-body h2 { font-size: 1.5rem; margin: 2.25rem 0 0.75rem; }
+.prose-body h3 { font-size: 1.2rem; margin: 1.75rem 0 0.5rem; }
+.prose-body p, .prose-body ul, .prose-body ol { margin: 0 0 1rem; color: var(--ink-soft); }
+.prose-body ul { list-style: disc; padding-left: 1.25rem; }
+.prose-body ol { list-style: decimal; padding-left: 1.25rem; }
+.prose-body li { margin: 0.35rem 0; }
+.prose-body a { color: var(--teal-strong); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #e3e7df 0%, #eef1eb 50%, #e3e7df 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* Hero lifecycle — the single orchestrated load moment */
+.lifecycle-step {
+  opacity: 0.35;
+  transform: translateX(-4px);
+  animation: step-in 480ms cubic-bezier(.2,.7,.2,1) forwards;
+}
+.lifecycle-step:nth-child(1) { animation-delay: 150ms; }
+.lifecycle-step:nth-child(2) { animation-delay: 450ms; }
+.lifecycle-step:nth-child(3) { animation-delay: 750ms; }
+.lifecycle-step:nth-child(4) { animation-delay: 1050ms; }
+.lifecycle-step:nth-child(5) { animation-delay: 1350ms; }
+@keyframes step-in { to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .lifecycle-step { opacity: 1; transform: none; }
 }

@@ -64,11 +64,13 @@ create trigger profiles_updated_at before update on public.profiles
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, display_name, is_adult)
+  insert into public.profiles (id, display_name, is_adult, profile_visibility)
   values (
     new.id,
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(new.email, '@', 1), 'Member'),
-    coalesce((new.raw_user_meta_data ->> 'is_adult')::boolean, true)
+    left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(new.email, '@', 1), 'Member'), 80),
+    coalesce((new.raw_user_meta_data ->> 'is_adult')::boolean, true),
+    -- Minors default to private profiles.
+    case when coalesce((new.raw_user_meta_data ->> 'is_adult')::boolean, true) then 'members' else 'private' end
   )
   on conflict (id) do nothing;
   return new;

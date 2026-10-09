@@ -241,6 +241,24 @@ run("database security & workflows", () => {
       expect(r.status).toBe("published");
     });
 
+    it("reverses direction for 'need' listings (responder gives, lister receives)", async () => {
+      const [{ id: need }] = await db.as(
+        bob,
+        `insert into resources (org_id, kind, title, category, quantity_total, quantity_available, unit, status)
+         values ($1, 'need', 'Winter coats', 'clothing', 40, 40, 'coats', 'published') returning id`,
+        [receiver],
+      );
+      const [{ request_resource: rq }] = await db.as(alice, `select request_resource($1, $2, 15)`, [need, giver]);
+      const [{ decide_resource_request: tid }] = await db.as(bob, `select decide_resource_request($1, true)`, [rq]);
+      const [t] = await db.sql(`select from_org_id, to_org_id from resource_transfers where id=$1`, [tid]);
+      expect(t.from_org_id).toBe(giver);
+      expect(t.to_org_id).toBe(receiver);
+      await db.as(alice, `select transition_transfer($1, 'collected')`, [tid]);
+      await db.as(bob, `select transition_transfer($1, 'completed')`, [tid]);
+      const [imp] = await db.sql(`select org_id from impact_records where source_id=$1 and metric='resource_transfer_completed'`, [tid]);
+      expect(imp.org_id).toBe(giver);
+    });
+
     it("hides transfers from unrelated users", async () => {
       expect(await db.as(outsider, `select * from resource_transfers`)).toHaveLength(0);
     });

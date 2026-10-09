@@ -324,8 +324,12 @@ begin
         quantity_approved = v_qty, decided_by = auth.uid(), decided_at = now(), decision_note = p_note
     where id = p_request;
 
+  -- Offers flow listing org -> requester; needs flow responder -> listing org.
   insert into public.resource_transfers (request_id, resource_id, from_org_id, to_org_id, quantity, unit, is_demo)
-  values (p_request, v_res.id, v_res.org_id, v_req.requesting_org_id, v_qty, v_res.unit, v_res.is_demo)
+  values (p_request, v_res.id,
+          case when v_res.kind = 'need' then v_req.requesting_org_id else v_res.org_id end,
+          case when v_res.kind = 'need' then v_res.org_id else v_req.requesting_org_id end,
+          v_qty, v_res.unit, v_res.is_demo)
   returning id into v_transfer;
 
   insert into public.resource_transfer_events (transfer_id, from_status, to_status, actor_id, note)
