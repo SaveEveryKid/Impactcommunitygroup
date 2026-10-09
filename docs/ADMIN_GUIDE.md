@@ -108,7 +108,7 @@ Refunds: organizations issue refunds from their own Stripe dashboard. When an ev
 
 ## When something goes wrong
 
-1. **Site down**: check Cloudflare → Workers & Pages → `kindred-commons` → Logs, and status.supabase.com.
+1. **Site down**: check Cloudflare → Workers & Pages → `impactcommunitygroup` → Logs, and status.supabase.com.
 2. **Emails not arriving**: Admin → Settings should show Email "Configured". Check Resend → Logs.
 3. **Payments failing**: check Stripe → Developers → Webhooks for failed deliveries.
 4. **Suspected account compromise**: remove their platform role immediately (Admin → Users), then contact your developer to rotate keys (see `OPERATIONS.md`).

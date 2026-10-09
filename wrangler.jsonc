@@ -1,15 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   // Rename for the client's account if desired; keep the service binding below in sync.
-  "name": "kindred-commons",
+  "name": "impactcommunitygroup",
   "main": "worker.ts",
   // Serve at <name>.<account>.workers.dev (works before a custom domain exists).
   "workers_dev": true,
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kindred-commons" }],
-  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "kindred-commons-opennext-cache" }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "impactcommunitygroup" }],
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "impactcommunitygroup-opennext-cache" }],
   "images": { "binding": "IMAGES" },
   "triggers": { "crons": ["*/5 * * * *", "*/15 * * * *"] },
   "observability": { "enabled": true },

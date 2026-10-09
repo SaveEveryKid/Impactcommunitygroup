@@ -14,7 +14,7 @@
 
 ## Recovery runbooks
 
-**Bad deploy (site broken).** Cloudflare → Workers & Pages → `kindred-commons` → Deployments → roll back to the previous version (one click). Then fix forward with a new commit.
+**Bad deploy (site broken).** Cloudflare → Workers & Pages → `impactcommunitygroup` → Deployments → roll back to the previous version (one click). Then fix forward with a new commit.
 
 **Bad migration.** Migrations are forward-only. Write a new migration that reverses the change, push, and let the pipeline apply it. If data was damaged, restore with PITR to a new project, copy the affected rows back, and verify. Never edit an already-applied migration file. See `supabase/rollbacks/README.md`.
 

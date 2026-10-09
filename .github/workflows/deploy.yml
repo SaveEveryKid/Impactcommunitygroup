@@ -117,7 +117,7 @@ jobs:
         run: npm run cf:build
 
       - name: Ensure R2 cache bucket
-        run: npx wrangler r2 bucket create kindred-commons-opennext-cache || echo "bucket exists"
+        run: npx wrangler r2 bucket create impactcommunitygroup-opennext-cache || echo "bucket exists"
 
       - name: Deploy Worker
         run: npx opennextjs-cloudflare deploy
