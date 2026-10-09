@@ -1,6 +1,7 @@
 import "server-only";
 import { getSupabase } from "@/lib/supabase/server";
 import type { Pillar } from "@/lib/constants";
+import { appEnv } from "@/lib/env";
 
 export const PAGE_SIZE = 12;
 
@@ -208,12 +209,17 @@ export async function listResources(opts: { q?: string; kind?: string; category?
 
 export type ImpactRow = { metric: string; verification: "verified" | "self_reported" | "estimated"; total: number; records: number };
 
-export async function getPublicImpact(): Promise<{ connected: boolean; rows: ImpactRow[] }> {
+/**
+ * Public impact figures. In the demonstration environment this returns the
+ * fictional demo figures instead, and callers must label them as such.
+ */
+export async function getPublicImpact(): Promise<{ connected: boolean; rows: ImpactRow[]; demo: boolean }> {
   const supabase = await getSupabase();
-  if (!supabase) return { connected: false, rows: [] };
-  const { data, error } = await supabase.rpc("public_impact_summary");
+  const demo = appEnv === "demo";
+  if (!supabase) return { connected: false, rows: [], demo };
+  const { data, error } = await supabase.rpc(demo ? "demo_impact_summary" : "public_impact_summary");
   if (error) throw new Error(`Could not load impact: ${error.message}`);
-  return { connected: true, rows: ((data ?? []) as ImpactRow[]).map((r) => ({ ...r, total: Number(r.total), records: Number(r.records) })) };
+  return { connected: true, demo, rows: ((data ?? []) as ImpactRow[]).map((r) => ({ ...r, total: Number(r.total), records: Number(r.records) })) };
 }
 
 export function impactValue(rows: ImpactRow[], metric: string, verification: ImpactRow["verification"] = "verified") {

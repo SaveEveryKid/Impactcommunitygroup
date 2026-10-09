@@ -4,7 +4,7 @@ import { formatNumber } from "@/lib/utils";
 
 const HEADLINE = ["organizations_registered", "volunteer_hours", "resource_transfer_completed", "event_attendance"] as const;
 
-export function ImpactStrip({ rows, connected, tone = "dark" }: { rows: ImpactRow[]; connected: boolean; tone?: "dark" | "light" }) {
+export function ImpactStrip({ rows, connected, tone = "dark", demo = false }: { rows: ImpactRow[]; connected: boolean; tone?: "dark" | "light"; demo?: boolean }) {
   const values = HEADLINE.map((m) => ({ metric: m, value: impactValue(rows, m) }));
   const allZero = values.every((v) => v.value === 0);
   const muted = tone === "dark" ? "text-white/65" : "text-ink-muted";
@@ -12,6 +12,7 @@ export function ImpactStrip({ rows, connected, tone = "dark" }: { rows: ImpactRo
 
   return (
     <div className="mt-10">
+      {demo ? <p className="mb-3 inline-block rounded-full bg-marigold px-3 py-1 text-sm font-bold text-ink">Demonstration data: fictional figures</p> : null}
       <dl className={`grid grid-cols-2 border-t ${border} lg:grid-cols-4`}>
         {values.map((v) => (
           <div key={v.metric} className={`border-b ${border} py-6 pr-4`}>

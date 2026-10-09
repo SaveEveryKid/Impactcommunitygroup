@@ -23,7 +23,7 @@ const METHODS: [string, string][] = [
 ];
 
 export default async function ImpactPage() {
-  const impact = await getPublicImpact().catch(() => ({ connected: false, rows: [] }));
+  const impact = await getPublicImpact().catch(() => ({ connected: false, rows: [], demo: false }));
   const verified = impact.rows.filter((r) => r.verification === "verified");
   const selfReported = impact.rows.filter((r) => r.verification !== "verified");
 
@@ -33,7 +33,7 @@ export default async function ImpactPage() {
       <section className="bg-ink py-14 text-white">
         <Container>
           <h2 className="text-2xl font-semibold">Verified totals</h2>
-          <ImpactStrip rows={impact.rows} connected={impact.connected} />
+          <ImpactStrip rows={impact.rows} connected={impact.connected} demo={impact.demo} />
           {verified.length ? (
             <dl className="mt-8 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
               {verified

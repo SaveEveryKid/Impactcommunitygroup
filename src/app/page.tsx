@@ -252,7 +252,7 @@ export default async function HomePage() {
               attendees checked in at the door.
             </p>
           </div>
-          <ImpactStrip rows={impact?.rows ?? []} connected={Boolean(impact?.connected)} />
+          <ImpactStrip rows={impact?.rows ?? []} connected={Boolean(impact?.connected)} demo={Boolean(impact?.demo)} />
           <Link href="/impact" className="mt-10 inline-flex font-semibold text-white underline underline-offset-4">
             How we measure impact
           </Link>

@@ -112,3 +112,18 @@ begin
   end if;
   return query select p.kind, p.livemode, sum(p.amount_cents)::bigint, count(*) from public.payment_records p group by p.kind, p.livemode;
 end $$;
+
+-- Demo environment figures (only ever shown with a "demonstration data" label).
+create or replace function public.demo_impact_summary()
+returns table (metric text, verification public.impact_verification, total numeric, records bigint)
+language sql stable security definer set search_path = public as $$
+  select metric::text, verification, sum(quantity), count(*)
+  from public.impact_records where is_demo and metric <> 'donation_processed'
+  group by metric, verification
+  union all
+  select 'organizations_registered', 'verified'::public.impact_verification, count(*), count(*)
+  from public.organizations where status = 'approved' and deleted_at is null and is_demo
+  union all
+  select 'active_volunteers_12mo', 'verified'::public.impact_verification, count(distinct user_id), count(distinct user_id)
+  from public.volunteer_hours where status = 'verified' and attended and is_demo
+$$;
