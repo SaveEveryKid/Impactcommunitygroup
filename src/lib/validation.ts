@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zonedLocalToUtc } from "@/lib/utils";
 import { EVENT_TYPES, ORG_TYPES, PILLARS, RESOURCE_CATEGORIES } from "@/lib/constants";
 
 export type ActionState = {
@@ -112,7 +113,7 @@ export const resourceSchema = z
     expires_at: z
       .string()
       .optional()
-      .transform((v) => (v ? new Date(v).toISOString() : null)),
+      .transform((v) => (v ? zonedLocalToUtc(v, "America/Chicago") : null)),
     handling_requirements: optionalText(1000),
     special_instructions: optionalText(1000),
     pickup_address: optionalText(300),
@@ -129,8 +130,9 @@ export const opportunitySchema = z.object({
   skills_required: z.array(trimmed(40)).max(15).default([]),
   general_location: optionalText(120),
   is_virtual: z.boolean(),
-  starts_at: z.string().optional().transform((v) => (v ? new Date(v).toISOString() : null)),
-  ends_at: z.string().optional().transform((v) => (v ? new Date(v).toISOString() : null)),
+  timezone: z.string().default("America/Chicago"),
+  starts_at: z.string().optional(),
+  ends_at: z.string().optional(),
   capacity: z.coerce.number().int().positive().max(10000).optional().nullable(),
   requires_approval: z.boolean(),
   allows_minors: z.boolean(),

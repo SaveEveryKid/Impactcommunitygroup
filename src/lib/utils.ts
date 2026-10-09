@@ -64,3 +64,47 @@ export function mediaUrl(path: string | null | undefined): string | null {
   if (!base) return null;
   return `${base}/storage/v1/object/public/media/${path}`;
 }
+
+/**
+ * Convert a datetime-local value ("2026-11-01T18:30") interpreted in an IANA
+ * time zone into a UTC ISO string. Handles DST by iterating on the offset.
+ */
+export function zonedLocalToUtc(local: string, timeZone = "America/Chicago"): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(local);
+  if (!m) return null;
+  const [y, mo, d, h, mi, s] = m.slice(1).map((x) => Number(x ?? 0));
+  const asUtc = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+  const offsetAt = (t: number) => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).formatToParts(new Date(t));
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+    return Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second")) - t;
+  };
+  let guess = asUtc - offsetAt(asUtc);
+  guess = asUtc - offsetAt(guess);
+  return new Date(guess).toISOString();
+}
+
+/** Inverse: UTC ISO -> "YYYY-MM-DDTHH:mm" in the given zone, for input defaults. */
+export function utcToZonedLocal(iso: string | null | undefined, timeZone = "America/Chicago"): string {
+  if (!iso) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(new Date(iso));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}

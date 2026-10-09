@@ -60,6 +60,14 @@ run("database security & workflows", () => {
       expect(pub).toHaveLength(1);
     });
 
+    it("never exposes EIN or internal ids through the API", async () => {
+      await expect(db.as(null, `select ein from organizations limit 1`)).rejects.toThrow(/permission denied/);
+      await expect(db.as(bob, `select created_by from organizations limit 1`)).rejects.toThrow(/permission denied/);
+      await expect(db.as(bob, `select * from org_private_fields($1)`, [giver])).rejects.toThrow(/admin required/);
+      const rows = await db.as(alice, `select * from org_private_fields($1)`, [giver]);
+      expect(rows).toHaveLength(1);
+    });
+
     it("prevents org admins from self-approving", async () => {
       await expect(db.as(dave, `update organizations set status='approved' where slug='sneaky-org'`)).rejects.toThrow(
         /platform administrators/,
@@ -357,6 +365,26 @@ run("database security & workflows", () => {
       const r2 = (await db.as(erin, `select (register_for_event($1)).*`, [id]))[0];
       expect(r2.status).toBe("waitlisted");
       await expect(db.as(bob, `update events set price_cents = 100 where id=$1`, [id])).rejects.toThrow(/Price cannot change/);
+    });
+
+    it("finalizes paid registrations idempotently and refuses overselling", async () => {
+      const [{ id }] = await db.as(
+        bob,
+        `insert into events (org_id, slug, title, starts_at, ends_at, capacity, price_cents, status)
+         values ($1, 'workshop-paid', 'Paid workshop', now() + interval '3 days', now() + interval '3 days 2 hours', 1, 1500, 'published') returning id`,
+        [receiver],
+      );
+      const r1 = (await db.as(dave, `select (register_for_event($1)).*`, [id]))[0];
+      await expect(db.as(dave, `select finalize_event_payment($1, 'cs_x', 1500)`, [r1.id])).rejects.toThrow(/permission denied/);
+      const [{ finalize_event_payment: a }] = await db.sql(`select finalize_event_payment($1, 'cs_1', 1500)`, [r1.id]);
+      const [{ finalize_event_payment: b }] = await db.sql(`select finalize_event_payment($1, 'cs_1', 1500)`, [r1.id]);
+      expect([a, b]).toEqual(["confirmed", "already"]);
+      // A second buyer whose hold lapsed cannot be confirmed into a full event.
+      const r2 = (await db.as(erin, `select (register_for_event($1)).*`, [id]))[0];
+      expect(r2.status).toBe("waitlisted");
+      await db.sql(`update event_registrations set status='pending_payment', hold_expires_at = now() - interval '1 minute' where id=$1`, [r2.id]);
+      const [{ finalize_event_payment: c }] = await db.sql(`select finalize_event_payment($1, 'cs_2', 1500)`, [r2.id]);
+      expect(c).toBe("refund_required");
     });
 
     it("completing an event records verified attendance impact", async () => {

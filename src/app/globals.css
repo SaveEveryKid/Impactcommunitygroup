@@ -161,3 +161,10 @@ p { text-wrap: pretty; }
   }
   .lifecycle-step { opacity: 1; transform: none; }
 }
+
+@media print {
+  header.sticky, body > footer, .skip-link, nav[aria-label="Organization sections"] { display: none !important; }
+  body { background: #fff; font-size: 11pt; }
+  main { padding: 0 !important; }
+  a { color: inherit; text-decoration: none; }
+}
