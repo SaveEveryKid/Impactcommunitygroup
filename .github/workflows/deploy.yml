@@ -25,13 +25,13 @@ jobs:
           CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           SB: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           REF: ${{ vars.SUPABASE_PROJECT_REF }}
-          URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          ACCT: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           missing=""
           [ -z "$CF" ] && missing="$missing CLOUDFLARE_API_TOKEN"
           [ -z "$SB" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
           [ -z "$REF" ] && missing="$missing SUPABASE_PROJECT_REF"
-          [ -z "$URL" ] && missing="$missing NEXT_PUBLIC_SITE_URL"
+          [ -z "$ACCT" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
           if [ -n "$missing" ]; then
             echo "::warning::Deployment skipped. Missing configuration:$missing (see docs/DEPLOYMENT.md)"
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -69,6 +69,25 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+
+      # No custom domain yet? Leave NEXT_PUBLIC_SITE_URL unset and the site runs at
+      # https://<worker-name>.<account-subdomain>.workers.dev
+      - name: Resolve site URL
+        run: |
+          if [ -n "$NEXT_PUBLIC_SITE_URL" ]; then
+            echo "Using custom domain: $NEXT_PUBLIC_SITE_URL"
+          else
+            sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r '.result.subdomain')
+            if [ -z "$sub" ] || [ "$sub" = "null" ]; then
+              echo "::error::No workers.dev subdomain found. In Cloudflare open Workers & Pages once to claim one, or set NEXT_PUBLIC_SITE_URL."
+              exit 1
+            fi
+            name=$(node -e 'const t=require("fs").readFileSync("wrangler.jsonc","utf8").replace(/^\s*\/\/.*$/gm,"");console.log(JSON.parse(t).name)')
+            url="https://$name.$sub.workers.dev"
+            echo "No custom domain set; using $url"
+            echo "NEXT_PUBLIC_SITE_URL=$url" >> "$GITHUB_ENV"
+          fi
 
       - name: Apply database migrations
         run: |

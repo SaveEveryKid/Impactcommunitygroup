@@ -68,7 +68,7 @@ Repository → Settings → Secrets and variables → Actions.
 |---|---|
 | `CLOUDFLARE_ACCOUNT_ID` | `0123abcd...` |
 | `SUPABASE_PROJECT_REF` | `abcdefghijklmnop` |
-| `NEXT_PUBLIC_SITE_URL` | `https://www.yourdomain.org` (no trailing slash) |
+| `NEXT_PUBLIC_SITE_URL` | Optional. Leave unset to run at `https://kindred-commons.<your-subdomain>.workers.dev`. Set to `https://www.yourdomain.org` once you have a domain. |
 | `NEXT_PUBLIC_BRAND_NAME` | `Kindred Commons` (working name) |
 | `EMAIL_FROM` | `Kindred Commons <notifications@yourdomain.org>` |
 | `STRIPE_ALLOW_LIVE` | `false` until launch approval |
@@ -80,13 +80,17 @@ The Supabase anon and service-role keys are **not** stored in GitHub. The workfl
 
 1. Push to `main` (or Actions → Deploy → Run workflow).
 2. The workflow applies all migrations, configures Auth, deploys the Worker, and creates the two Stripe webhook endpoints (platform and Connect). It stores their signing secrets in Cloudflare automatically on first creation.
-3. **Attach your domain**: Cloudflare → Workers & Pages → `kindred-commons` → Settings → Domains & Routes → Add custom domain → `www.yourdomain.org`. It must match `NEXT_PUBLIC_SITE_URL`.
+3. **Attach your domain** (skip until you have one; the site runs on its workers.dev address meanwhile): Cloudflare → Workers & Pages → `kindred-commons` → Settings → Domains & Routes → Add custom domain → `www.yourdomain.org`. It must match `NEXT_PUBLIC_SITE_URL`.
 4. **Make Toni a super admin.** Toni signs up on the live site, confirms email, then in Supabase → SQL Editor runs:
    ```sql
    insert into public.platform_admins (user_id, role)
    select id, 'super_admin' from auth.users where email = 'toni@example.org';
    ```
    After that, Toni grants other staff roles from **Admin → Users**. No more SQL is needed.
+
+## 4b. Moving from workers.dev to a custom domain later
+
+Add the domain to Cloudflare, attach it to the Worker (step 3), set the `NEXT_PUBLIC_SITE_URL` variable, and re-run Deploy. Supabase auth URLs and the Stripe webhook endpoints are updated automatically. Afterwards you can delete the old workers.dev webhook endpoints in Stripe → Developers → Webhooks.
 
 ## 5. Things the workflow cannot do (one-time, by hand)
 

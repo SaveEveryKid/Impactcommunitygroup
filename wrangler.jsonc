@@ -3,6 +3,8 @@
   // Rename for the client's account if desired; keep the service binding below in sync.
   "name": "kindred-commons",
   "main": "worker.ts",
+  // Serve at <name>.<account>.workers.dev (works before a custom domain exists).
+  "workers_dev": true,
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
