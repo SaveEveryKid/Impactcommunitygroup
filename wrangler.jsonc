@@ -9,8 +9,6 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "impactcommunitygroup" }],
-  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "impactcommunitygroup-opennext-cache" }],
-  "images": { "binding": "IMAGES" },
   "triggers": { "crons": ["*/5 * * * *", "*/15 * * * *"] },
   "observability": { "enabled": true },
   // Non-secret configuration. Secrets (service role key, Stripe, Resend, CRON_SECRET)

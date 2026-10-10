@@ -116,11 +116,15 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.sbkeys.outputs.anon }}
         run: npm run cf:build
 
-      - name: Ensure R2 cache bucket
-        run: npx wrangler r2 bucket create impactcommunitygroup-opennext-cache || echo "bucket exists"
-
       - name: Deploy Worker
-        run: npx opennextjs-cloudflare deploy
+        run: |
+          set -o pipefail
+          if ! npx opennextjs-cloudflare deploy 2>&1 | tee deploy.out; then
+            # Surface the failure as an annotation (readable from the run summary and API).
+            msg=$(grep -v '^\s*$' deploy.out | tail -n 25 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=Worker deploy failed::$msg"
+            exit 1
+          fi
 
       - name: Sync Worker secrets
         env:
@@ -144,7 +148,10 @@ jobs:
             for (const k of Object.keys(s)) if (!s[k]) delete s[k];
             require("fs").writeFileSync("secrets.json", JSON.stringify(s), { mode: 0o600 });
           '
-          npx wrangler secret bulk secrets.json
+          if ! npx wrangler secret bulk secrets.json > secret.out 2>&1; then
+            echo "::error title=Secret sync failed::$(tail -n 15 secret.out | sed ':a;N;$!ba;s/\n/%0A/g')"
+            rm -f secrets.json; exit 1
+          fi
           rm -f secrets.json
 
       - name: Ensure Stripe webhooks

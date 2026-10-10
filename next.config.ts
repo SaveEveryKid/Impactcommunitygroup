@@ -35,6 +35,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
+    // Served directly from Supabase Storage (no Cloudflare Images binding required).
+    unoptimized: true,
     remotePatterns: supabaseHost ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }] : [],
   },
   experimental: {
